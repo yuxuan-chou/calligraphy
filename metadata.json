@@ -1,0 +1,6 @@
+{
+  "name": "聖教序雲檢索",
+  "description": "王羲之《集字聖教序》單頁式查詢工具",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
