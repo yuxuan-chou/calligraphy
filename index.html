@@ -1,62 +1,911 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>聖教序字帖搜尋</title>
-  <!-- Tailwind CSS via Vite -->
-  <link rel="stylesheet" href="/src/style.css">
-  
-  <!-- Icons via CDN -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  
-  <!-- OpenCC for traditional/simplified conversion -->
-  <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>王羲之集字聖教序 PRD 檢索工具</title>
+
+    <!-- 引入 Google Fonts (Noto Serif TC 作為書法標題, Noto Sans TC 作為內文) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind 自訂配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'paper': '#f5f0e6', // 宣紙底色
+                        'ink': '#2C2C2C',   // 墨黑色
+                        'seal': '#B22222',  // 硃砂紅
+                    },
+                    fontFamily: {
+                        'serif': ['"Noto Serif TC"', 'serif'],
+                        'sans': ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    backgroundImage: {
+                        'paper-texture': "url('data:image/svg+xml,%3Csvg width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 100 100\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cfilter id=\\'noise\\'%3E%3CfeTurbulence type=\\'fractalNoise\\' baseFrequency=\\'0.8\\' numOctaves=\\'3\\' stitchTiles=\\'stitch\\'/%3E%3C/filter%3E%3Crect width=\\'100\\' height=\\'100\\' filter=\\'url(%23noise)\\' opacity=\\'0.04\\'/%3E%3C/svg%3E')"
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* 平滑滾動與自訂選取顏色 */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        ::selection {
+            background-color: #B22222;
+            color: #f5f0e6;
+        }
+
+        /* 隱藏預設滾動條以增加畫面乾淨度 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f5f0e6;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1c9b8;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #b0a793;
+        }
+
+        /* 燈箱淡入淡出動畫 */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+
+        .fade-out {
+            animation: fadeOut 0.3s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-[#f7f5f0] text-[#2c2c2c] font-serif selection:bg-[#8b2626] selection:text-white">
-  
-  <div class="max-w-7xl mx-auto px-6 py-12 md:py-20">
-    <header class="flex flex-col items-center mb-16 space-y-6">
-      <div class="w-16 h-16 rounded-full border-2 border-[#8b2626] flex items-center justify-center bg-white shadow-sm" id="header-circle">
-        <span class="text-2xl font-bold text-[#8b2626]" style="font-family: 'Kaiti', serif;">聖</span>
-      </div>
-      <h1 class="text-4xl md:text-5xl font-medium tracking-widest text-[#2c2c2c]">書聖王羲之</h1>
-      <p class="text-lg text-gray-600 tracking-wider">集字聖教序 • 行書字典</p>
-      
-      <nav class="flex gap-8 text-sm uppercase tracking-[0.2em] font-medium opacity-70">
-        <a href="#" class="hover:text-[#8b2626] transition-colors border-b border-[#8b2626] pb-1">字帖查詢</a>
-      </nav>
+
+<body class="bg-paper bg-paper-texture text-ink font-sans min-h-screen flex flex-col relative">
+
+    <!-- 導覽列 (Navbar) -->
+    <nav
+        class="w-full px-6 py-4 flex justify-between items-center border-b border-gray-300/50 relative z-10 backdrop-blur-sm bg-paper/80">
+        <div class="flex items-center gap-3">
+            <!-- 模擬硃砂印章 -->
+            <div
+                class="w-8 h-8 bg-seal text-paper flex items-center justify-center font-serif text-lg font-bold rounded-sm shadow-sm select-none">
+                王</div>
+            <a href="#" class="font-serif text-xl tracking-widest text-ink hover:text-seal transition-colors">聖教序雲檢索</a>
+        </div>
+        <div>
+            <a href="#search-section"
+                class="text-sm font-medium tracking-wider hover:text-seal transition-colors border-b border-transparent hover:border-seal pb-1">字帖查詢</a>
+        </div>
+    </nav>
+
+    <!-- 主視覺區 (Hero) -->
+    <header class="w-full flex-col flex items-center justify-center pt-24 pb-16 px-4">
+        <h1 class="text-4xl md:text-6xl font-serif font-bold tracking-[0.2em] mb-6 text-center text-ink drop-shadow-sm">
+            天下第一集字聖教序
+        </h1>
+        <p class="text-lg md:text-xl font-light tracking-widest text-gray-600 text-center">
+            輸入漢字，探索書聖王羲之的筆墨神韻
+        </p>
+        <div class="w-12 h-[1px] bg-seal mt-8 opacity-70"></div>
     </header>
 
-    <main class="max-w-3xl mx-auto">
-      <form id="search-form" class="relative group">
-        <div class="absolute inset-y-0 left-6 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#8b2626] transition-colors">
-          <i data-lucide="search" class="w-6 h-6"></i>
+    <!-- 查詢功能區 -->
+    <section id="search-section" class="w-full max-w-2xl mx-auto px-4 flex flex-col items-center">
+        <div class="w-full relative">
+            <input type="text" id="searchInput"
+                class="w-full bg-transparent border-b-2 border-gray-400 focus:border-seal outline-none text-center text-2xl md:text-3xl py-4 font-serif tracking-widest transition-colors placeholder:text-gray-400 placeholder:text-lg placeholder:font-sans"
+                placeholder="輸入想查詢的漢字（如：天、之、道）" autocomplete="off">
         </div>
-        <input 
-          type="text" 
-          id="search-input"
-          placeholder="輸入漢字，例如：天地玄黃..."
-          class="w-full bg-white border border-gray-200 rounded-full py-5 pl-16 pr-16 text-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8b2626]/20 focus:border-[#8b2626] transition-all placeholder:text-gray-300"
-        >
-        <button type="button" id="clear-btn" class="absolute inset-y-0 right-6 flex items-center text-gray-300 hover:text-gray-600 hidden">
-          <i data-lucide="x-circle" class="w-6 h-6"></i>
+        <button id="searchBtn"
+            class="mt-10 bg-seal text-paper px-12 py-3 rounded-sm font-serif text-xl tracking-[0.3em] shadow-md hover:bg-[#8A1A1A] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+            檢索
         </button>
-      </form>
+    </section>
 
-      <div id="results-container" class="mt-12">
-        <div id="initial-state" class="text-center text-gray-400 py-12 opacity-60">
-          <i data-lucide="pen-tool" class="w-12 h-12 mx-auto mb-4 opacity-50"></i>
-          <p class="text-lg tracking-widest">在上方輸入文字開始查詢</p>
+    <!-- 結果展示區 -->
+    <main class="flex-grow w-full max-w-5xl mx-auto px-4 py-20 hidden" id="resultsContainer">
+        <!-- 動態狀態提示 -->
+        <div id="statusMessage" class="text-center font-serif text-xl text-gray-500 mb-10 tracking-widest hidden">
+            正在為您尋找筆墨...
         </div>
-      </div>
+
+        <!-- 卡片網格 -->
+        <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+            <!-- 卡片由 JavaScript 動態生成 -->
+        </div>
     </main>
-  </div>
 
-  <script type="module" src="/src/main.js"></script>
-  <script>
-    lucide.createIcons();
-  </script>
+    <!-- 空白佔位區 (用來把 footer 推到底部) -->
+    <div class="flex-grow" id="spacer"></div>
+
+    <!-- 頁尾 (Footer) -->
+    <footer class="w-full text-center py-8 border-t border-gray-300/50 mt-12 bg-paper/80">
+        <p class="text-gray-500 text-sm tracking-wider font-light">
+            &copy; 2026 聖教序雲檢索 | 資料來源僅供學習交流 | 致敬書聖王羲之
+        </p>
+    </footer>
+
+    <!-- 燈箱 (Lightbox) -->
+    <div id="lightbox"
+        class="fixed inset-0 bg-black/90 z-50 hidden flex-col justify-center items-center backdrop-blur-sm">
+        <button id="closeLightbox"
+            class="absolute top-6 right-6 text-white text-5xl hover:text-seal transition-colors font-light">&times;</button>
+        <img id="lightboxImg" src="" alt="放大檢視"
+            class="max-h-[85vh] max-w-[90vw] object-contain shadow-2xl border border-white/10 rounded-sm">
+        <p id="lightboxCaption" class="text-paper mt-6 text-2xl font-serif tracking-widest"></p>
+    </div>
+
+    <!-- 核心邏輯 JavaScript -->
+    <script>
+        // ==========================================
+        // 全域函數定義區 (避免 inline HTML 找不到 function)
+        // ==========================================
+
+        // --- 碑帖拓片模擬產生器 ---
+        window.generateCalligraphyImage = function (char) {
+            const canvas = document.createElement('canvas');
+            // 使用高解析度以獲得更好的視覺體驗
+            canvas.width = 600;
+            canvas.height = 800;
+            const ctx = canvas.getContext('2d');
+
+            // 1. 繪製黑底 (模擬墨拓)
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. 添加石刻斑駁紋理 (Noise)
+            for (let i = 0; i < 8000; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const size = Math.random() * 2;
+                // 混雜白色與深黑色雜點
+                ctx.fillStyle = Math.random() > 0.3 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.8)';
+                ctx.fillRect(x, y, size, size);
+            }
+
+            // 3. 繪製宣紙邊緣泛黃/反光感 (模擬拓紙)
+            const gradient = ctx.createRadialGradient(300, 400, 100, 300, 400, 600);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 4. 繪製書法文字 (白字)
+            ctx.fillStyle = '#e8e6e1'; // 偏暖的紙白色
+            ctx.font = 'bold 360px "Noto Serif TC", serif'; // 使用粗明體模擬書法筆畫
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // 添加字體陰影，模擬石刻凹陷立體感
+            ctx.shadowColor = 'rgba(0, 0, 0, 1)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+
+            // 微調文字位置置中
+            ctx.fillText(char, canvas.width / 2, canvas.height / 2 + 30);
+
+            // 回傳 Base64 圖片編碼
+            return canvas.toDataURL('image/jpeg', 0.9);
+        };
+
+        // --- 圖片載入失敗的救援機制 ---
+        window.handleImageError = function (imgElement, char) {
+            imgElement.onerror = null; // 防止無限迴圈
+            imgElement.src = window.generateCalligraphyImage(char);
+
+            // 同步更新下載連結
+            const group = imgElement.closest('.group');
+            if (group && group.nextElementSibling) {
+                const downloadLink = group.nextElementSibling.querySelector('a');
+                if (downloadLink) {
+                    downloadLink.href = imgElement.src;
+                }
+            }
+        };
+
+        // --- 燈箱控制邏輯 ---
+        window.openLightbox = function (imgSrc, char) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightboxImg');
+            const lightboxCaption = document.getElementById('lightboxCaption');
+
+            lightboxImg.src = imgSrc;
+            lightboxCaption.textContent = `《集字聖教序》 — ${char}`;
+            lightbox.classList.remove('hidden');
+            lightbox.classList.remove('fade-out');
+            lightbox.classList.add('flex', 'fade-in');
+            document.body.style.overflow = 'hidden'; // 禁止背景滾動
+        };
+
+        window.closeLightbox = function () {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.remove('fade-in');
+            lightbox.classList.add('fade-out');
+            setTimeout(() => {
+                lightbox.classList.add('hidden');
+                lightbox.classList.remove('flex');
+                document.body.style.overflow = ''; // 恢復背景滾動
+            }, 300); // 對應 fadeOut 動畫時間
+        };
+
+        // ==========================================
+        // 頁面加載完成後的初始化邏輯
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const cardsGrid = document.getElementById('cardsGrid');
+            const statusMessage = document.getElementById('statusMessage');
+            const spacer = document.getElementById('spacer');
+            const closeLightboxBtn = document.getElementById('closeLightbox');
+            const lightbox = document.getElementById('lightbox');
+
+            // 綁定事件
+            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+
+            closeLightboxBtn.addEventListener('click', window.closeLightbox);
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) window.closeLightbox();
+            });
+
+            // --- 核心查詢邏輯 ---
+            function performSearch() {
+                const query = searchInput.value.trim().replace(/\s+/g, ''); // 去除空白
+                if (!query) {
+                    alert('請輸入想要查詢的漢字。');
+                    return;
+                }
+
+                // UI 狀態切換
+                spacer.classList.add('hidden');
+                resultsContainer.classList.remove('hidden');
+                cardsGrid.innerHTML = '';
+                statusMessage.classList.remove('hidden');
+                statusMessage.textContent = '正在為您尋找筆墨...';
+
+                // 模擬網路延遲，增加儀式感
+                setTimeout(() => {
+                    renderResults(query);
+                }, 600);
+            }
+
+            // --- 真實圖片資料庫 (支援多圖) ---
+            // 💡 如果一個字有多種寫法，可以使用陣列 [ ] 放入多個圖片路徑
+            const imageDatabase = {
+                '一': ['images/一/122627.gif', 'images/一/129727.gif'],
+                '二': ['images/二/122723.gif'],
+                '七': ['images/七/122629.gif'],
+                '人': ['images/人/122758.gif', 'images/人/122759.gif', 'images/人/122760.gif'],
+                '八': ['images/八/123049.gif'],
+                '力': ['images/力/123220.gif'],
+                '十': ['images/十/123300.gif'],
+                '三': ['images/三/122632.gif'],
+                '上': ['images/上/122633.gif'],
+                '下': ['images/下/122634.gif'],
+                '也': ['images/也/122706.gif', 'images/也/122707.gif', 'images/也/122708.gif'],
+                '凡': ['images/凡/123126.gif', 'images/凡/123127.gif'],
+                '千': ['images/千/123301.gif'],
+                '口': ['images/口/123414.gif'],
+                '土': ['images/土/123784.gif'],
+                '夕': ['images/夕/123910.gif'],
+                '大': ['images/千/123301.gif'],
+                '小': ['images/小/124215.gif'],
+                '山': ['images/山/124269.gif'],
+                '川': ['images/川/124347.gif'],
+                '干': ['images/干/124408.gif', 'images/干/124409.gif'],
+                '才': ['images/才/124839.gif'],
+                '不': ['images/不/122635.gif'],
+                '中': ['images/中/122668.gif', 'images/中/122669.gif', 'images/中/122670.gif'],
+                '之': ['images/之/122690.gif', 'images/之/122691.gif'],
+                '五': ['images/五/122732.gif'],
+                '仁': ['images/仁/122763.gif'],
+                '今': ['images/今/122770.gif'],
+                '內': ['images/內/123072.gif', 'images/內/123073.gif'],
+                '六': ['images/六/123053.gif', 'images/六/123054.gif'],
+                '分': ['images/分/123146.gif'],
+                '化': ['images/化/123282.gif'],
+                '升': ['images/升/123303.gif', 'images/升/123304.gif', 'images/升/123305.gif'],
+                '及': ['images/及/123394.gif'],
+                '天': ['images/天/123917.gif'],
+                '太': ['images/太/123918.gif'],
+                '夫': ['images/夫/123919.gif'],
+                '尤': ['images/尤/124226.gif', 'images/尤/124227.gif'],
+                '引': ['images/引/124487.gif'],
+                '心': ['images/心/124567.gif', 'images/心/124568.gif'],
+                '文': ['images/文/125201.gif'],
+                '方': ['images/方/125224.gif'],
+                '日': ['images/日/125244.gif', 'images/日/125245.gif'],
+                '月': ['images/月/125365.gif'],
+                '木': ['images/木/129594.gif'],
+                '比': ['images/比/125719.gif', 'images/比/125720.gif'],
+                '水': ['images/水/125755.gif'],
+                '火': ['images/火/126108.gif'],
+                '王': ['images/王/126335.gif'],
+                '世': ['images/世/122646.gif'],
+                '乍': ['images/乍/122692.gif', 'images/乍/122693.gif'],
+                '乎': ['images/乎/122694.gif'],
+                '仙': ['images/仙/122787.gif'],
+                '以': ['images/以/122795.gif', 'images/以/122796.gif'],
+                '出': ['images/出/123138.gif'],
+                '惠': ['images/卉/123307.gif'],
+                '古': ['images/古/123415.gif', 'images/古/123416.gif', 'images/古/123417.gif'],
+                '只': ['images/只/123422.gif'],
+                '可': ['images/可/123428.gif', 'images/可/123429.gif', 'images/可/123430.gif'],
+                '右': ['images/右/123437.gif'],
+                '四': ['images/四/123754.gif'],
+                '外': ['images/外/123911.gif', 'images/外/123912.gif'],
+                '失': ['images/失/123922.gif', 'images/失/123923.gif'],
+                '布': ['images/布/124374.gif'],
+                '幼': ['images/幼/124418.gif'],
+                '弘': ['images/弘/124489.gif'],
+                '未': ['images/未/125379.gif'],
+                '本': ['images/本/125382.gif'],
+                '正': ['images/正/125667.gif'],
+                '民': ['images/民/125734.gif', 'images/民/125735.gif'],
+                '永': ['images/永/125757.gif', 'images/永/125758.gif'],
+                '玄': ['images/玄/126330.gif', 'images/玄/126331.gif'],
+                '瓜': ['images/瓜/126436.gif'],
+                '瓦': ['images/瓦/126442.gif'],
+                '生': ['images/生/126457.gif'],
+                '由': ['images/由/126468.gif'],
+                '先': ['images/先/123034.gif'],
+                '光': ['images/光/129527.gif'],
+                '共': ['images/共/123058.gif'],
+                '危': ['images/危/123347.gif'],
+                '合': ['images/合/123455.gif'],
+                '同': ['images/同/123460.gif', 'images/同/123461.gif'],
+                '因': ['images/因/123757.gif', 'images/因/123758.gif'],
+                '在': ['images/在/123786.gif'],
+                '地': ['images/地/123792.gif'],
+                '存': ['images/存/124107.gif', 'images/存/124108.gif', 'images/存/124109.gif'],
+                '宅': ['images/宅/宅.gif'],
+                '宇': ['images/宇/124132.gif'],
+                '寺': ['images/寺/124201.gif'],
+                '年': ['images/年/124412.gif', 'images/年/124413.gif'],
+                '成': ['images/成/124804.gif'],
+                '托': ['images/托/124848.gif', 'images/托/124849.gif', 'images/托/124850.gif'],
+                '旨': ['images/旨/125249.gif', 'images/旨/125250.gif'],
+                '早': ['images/早/125252.gif'],
+                '旨': ['images/曲/125350.gif', 'images/曲/125351.gif'],
+                '早': ['images/有/125366.gif'],
+                '存': ['images/污/110297.gif', 'images/污/125776.gif', 'images/污/125777.gif'],
+                '宅': ['images/百/126593.gif'],
+                '而': ['images/而/127324.gif', 'images/而/127325.gif'],
+                '自': ['images/自/127491.gif'],
+                '至': ['images/至/127494.gif'],
+                '色': ['images/色/127538.gif'],
+                '行': ['images/行/127968.gif', 'images/行/127969.gif', 'images/行/127970.gif'],
+                '西': ['images/西/128048.gif'],
+                '佛': ['images/佛/122869.gif'],
+                '劫': ['images/劫/123239.gif'],
+                '含': ['images/含/123484.gif'],
+                '妙': ['images/妙/123984.gif'],
+                '序': ['images/序/124429.gif'],
+                '形': ['images/形/124516.gif'],
+                '忍': ['images/忍/124573.gif'],
+                '抑': ['images/抑/124882.gif'],
+                '投': ['images/投/124886.gif', 'images/投/124887.gif', 'images/投/124888.gif'],
+                '杖': ['images/杖/125406.gif'],
+                '求': ['images/求/125762.gif'],
+                '沙': ['images/沙/125802.gif'],
+                '罕': ['images/罕/127253.gif'],
+                '良': ['images/良/127536.gif'],
+                '言': ['images/言/128074.gif'],
+                '足': ['images/足/128355.gif'],
+                '邦': ['images/邦/128639.gif', 'images/邦/128640.gif'],
+                '里': ['images/里/128741.gif'],
+                '來': ['images/來/125411.gif', 'images/來/125412.gif'],
+                '其': ['images/其/123062.gif'],
+                '典': ['images/典/123064.gif'],
+                '制': ['images/制/123176.gif', 'images/制/125289.gif'],
+                '受': ['images/受/123406.gif'],
+                '周': ['images/周/123520.gif'],
+                '味': ['images/味/123521.gif'],
+                '坤': ['images/坤/123820.gif'],
+                '垂': ['images/垂/123831.gif'],
+                '奇': ['images/奇/123934.gif', 'images/奇/123935.gif'],
+                '孤': ['images/孤/124117.gif'],
+                '宗': ['images/宗/124142.gif'],
+                '宙': ['images/宙/124144.gif'],
+                '岸': ['images/岸/124291.gif'],
+                '彼': ['images/彼/124530.gif', 'images/彼/124531.gif'],
+                '征': ['images/征/124534.gif', 'images/征/124535.gif'],
+                '忽': ['images/忽/124603.gif', 'images/忽/124604.gif'],
+                '性': ['images/性/124628.gif'],
+                '或': ['images/或/124810.gif', 'images/或/124811.gif', 'images/或/124812.gif', 'images/或/124813.gif'],
+                '所': ['images/所/124831.gif'],
+                '承': ['images/承/124876.gif'],
+                '拔': ['images/拔/124931.gif'],
+                '拙': ['images/拙/124936.gif'],
+                '於': ['images/於/122725.gif', 'images/於/122726.gif', 'images/於/下載.bmp'],
+                '明': ['images/明/125273.gif'],
+                '昏': ['images/昏/125274.gif', 'images/昏/125275.gif'],
+                '易': ['images/易/125276.gif'],
+                '昔': ['images/昔/125277.gif'],
+                '東': ['images/東/122653.gif'],
+                '松': ['images/松/125424.gif'],
+                '析': ['images/析/125430.gif'],
+                '林': ['images/林/125433.gif', 'images/林/125434.gif'],
+                '沾': ['images/沾/125821.gif'],
+                '沿': ['images/沿/125822.gif'],
+                '況': ['images/況/123105.gif', 'images/況/123106.gif'],
+                '法': ['images/法/125830.gif', 'images/法/125831.gif'],
+                '波': ['images/波/125839.gif'],
+                '注': ['images/注/125842.gif'],
+                '泫': ['images/泫/125843.gif'],
+                '物': ['images/物/126252.gif', 'images/物/126253.gif'],
+                '知': ['images/知/126728.gif'],
+                '糾': ['images/糾/127113.gif', 'images/糾/127114.gif'],
+                '空': ['images/空/126897.gif'],
+                '者': ['images/者/127320.gif'],
+                '花': ['images/花/127563.gif', 'images/花/127564.gif'],
+                '金': ['images/金/128746.gif'],
+                '長': ['images/長/128907.gif'],
+                '門': ['images/門/128913.gif'],
+                '附': ['images/附/128981.gif', 'images/附/128982.gif', 'images/附/129717.gif'],
+                '雨': ['images/雨/129061.gif', 'images/雨/129062.gif', 'images/雨/129063.gif', 'images/雨/129064.gif'],
+                '非': ['images/非/129104.gif'],
+                '俗': ['images/俗/122924.gif'],
+                '知': ['images/則/123163.gif'],
+                '糾': ['images/前/123194.gif', 'images/前/123195.gif'],
+                '空': ['images/厚/123371.gif'],
+                '者': ['images/品/123564.gif'],
+                '哉': ['images/哉/123570.gif'],
+                '城': ['images/城/123848.gif'],
+                '契': ['images/契/123942.gif'],
+                '威': ['images/威/124025.gif'],
+                '宣': ['images/宣/124154.gif'],
+                '帝': ['images/帝/124389.gif'],
+                '幽': ['images/幽/124419.gif'],
+                '律': ['images/律/124543.gif'],
+                '後': ['images/後/110266.gif'],
+                '思': ['images/思/124622.gif', 'images/思/124623.gif'],
+                '拯': ['images/拯/124952.gif'],
+                '故': ['images/故/125169.gif', 'images/故/125170.gif', 'images/故/125171.gif', 'images/故/125172.gif'],
+                '施': ['images/施/125225.gif'],
+                '春': ['images/春/125284.gif'],
+                '昨': ['images/昨/125287.gif', 'images/昨/125288.gif', 'images/昨/125289.gif'],
+                '是': ['images/是/125291.gif'],
+                '洞': ['images/洞/125867.gif'],
+                '洪': ['images/洪/125870.gif'],
+                '流': ['images/流/125883.gif'],
+                '為': ['images/為/122678.gif'],
+                '爰': ['images/爰/126224.gif'],
+                '皆': ['images/皆/126597.gif'],
+                '皇': ['images/皇/126598.gif'],
+                '盈': ['images/盈/126619.gif'],
+                '相': ['images/相/126647.gif'],
+                '省': ['images/省/126652.gif', 'images/省/126653.gif'],
+                '砂': ['images/砂/126742.gif'],
+                '耶': ['images/耶/127340.gif'],
+                '致': ['images/致/127495.gif'],
+                '苞': ['images/苞/127584.gif'],
+                '若': ['images/若/127588.gif', 'images/若/127589.gif'],
+                '要': ['images/要/128049.gif', 'images/要/128050.gif'],
+                '貞': ['images/貞/128270.gif'],
+                '軍': ['images/軍/123087.gif', 'images/軍/123088.gif'],
+                '述': ['images/述/128550.gif'],
+                '重': ['images/重/128742.gif'],
+                '風': ['images/風/129188.gif'],
+                '飛': ['images/飛/129197.gif'],
+                '乘': ['images/乘/122703.gif'],
+                '倫': ['images/倫/122833.gif'],
+                '哲': ['images/哲/123586.gif'],
+                '堂': ['images/唐/123595.gif'],
+                '下': ['images/夏/123909.gif'],
+                '奘': ['images/奘/123950.gif'],
+                '宮': ['images/宮/124159.gif'],
+                '容': ['images/容/124169.gif'],
+                '峯': ['images/峯/124305.gif'],
+                '師': ['images/師/124376.gif'],
+                '庭': ['images/庭/124446.gif'],
+                '恐': ['images/恐/124643.gif'],
+                '恩': ['images/恩/124653.gif'],
+                '悟': ['images/悟/124679.gif'],
+                '挹': ['images/挹/124989.gif'],
+                '時': ['images/時/125258.gif', 'images/時/125259.gif'],
+                '晉': ['images/晉/晉.gif'],
+                '書': ['images/書/122711.gif'],
+                '朗': ['images/朗/125373.gif'],
+                '栖': ['images/栖/125489.gif'],
+                '桂': ['images/桂/125508.gif'],
+                '海': ['images/海/125911.gif'],
+                '涂': ['images/涂/125913.gif'],
+                '珠': ['images/珠/126365.gif'],
+                '珪': ['images/珪/126368.gif', 'images/珪/126369.gif'],
+                '真': ['images/真/126662.gif', 'images/真/126663.gif'],
+                '神': ['images/神/下載.bmp'],
+                '紛': ['images/紛/127136.gif'],
+                '缺': ['images/缺/127243.gif'],
+                '能': ['images/能/127425.gif', 'images/能/127426.gif'],
+                '茲': ['images/茲/123065.gif'],
+                '訓': ['images/訓/128106.gif', 'images/訓/128107.gif'],
+                '記': ['images/記/128111.gif'],
+                '起': ['images/起/128348.gif'],
+                '躬': ['images/躬/128448.gif'],
+                '軒': ['images/軒/128462.gif'],
+                '迷': ['images/迷/128553.gif'],
+                '隻': ['images/隻/129539.gif'],
+                '高': ['images/高/129311.gif'],
+                '乾': ['images/乾/110279.gif'],
+                '偽': ['images/偽/122835.gif', 'images/偽/122836.gif'],
+                '區': ['images/區/123294.gif', 'images/區/123295.gif'],
+                '唯': ['images/唯/123604.gif', 'images/唯/123605.gif', 'images/唯/123606.gif', 'images/唯/123607.gif'],
+                '國': ['images/國/123772.gif', 'images/國/123773.gif'],
+                '域': ['images/域/123853.gif'],
+                '基': ['images/基/123859.gif'],
+                '堅': ['images/迷/128553.gif'],
+                '寂': ['images/隻/129539.gif'],
+                '將': ['images/高/129311.gif'],
+                '崇': ['images/乾/110279.gif'],
+                '常': ['images/常/124399.gif', 'images/常/124400.gif'],
+                '庸': ['images/庸/124452.gif'],
+                '得': ['images/得/124547.gif', 'images/得/124548.gif'],
+                '御': ['images/御/124551.gif', 'images/御/124552.gif'],
+                '情': ['images/情/124701.gif'],
+                '惟': ['images/惟/124715.gif', 'images/惟/124716.gif'],
+                '探': ['images/探/125039.gif', 'images/探/125040.gif'],
+                '控': ['images/控/125044.gif', 'images/控/125045.gif'],
+                '掩': ['images/掩/125047.gif'],
+                '敏': ['images/敏/125176.gif'],
+                '教': ['images/教/125183.gif'],
+                '晦': ['images/晦/125316.gif'],
+                '晨': ['images/晨/125317.gif'],
+                '條': ['images/條/125410.gif'],
+                '欲': ['images/欲/125653.gif'],
+                '毫': ['images/毫/125725.gif'],
+                '淥': ['images/淥/125968.gif'],
+                '淨': ['images/淨/123112.gif'],
+                '深': ['images/深/125959.gif'],
+                '清': ['images/清/125965.gif', 'images/清/125966.gif'],
+                '焉': ['images/焉/126164.gif'],
+                '現': ['images/現/126350.gif'],
+                '理': ['images/理/126377.gif'],
+                '異': ['images/異/124474.gif'],
+                '皎': ['images/皎/129642.gif'],
+                '累': ['images/累/127089.gif'],
+                '細': ['images/細/127151.gif', 'images/細/127152.gif'],
+                '習': ['images/習/122709.gif'],
+                '莫': ['images/莫/127666.gif'],
+                '處': ['images/處/123905.gif', 'images/處/123906.gif'],
+                '袖': ['images/袖/128002.gif'],
+                '被': ['images/被/128006.gif'],
+                '訛': ['images/訛/128121.gif'],
+                '途': ['images/途/128572.gif'],
+                '通': ['images/通/128575.gif'],
+                '部': ['images/部/128670.gif', 'images/部/128671.gif'],
+                '陰': ['images/陰/128970.gif'],
+                '陵': ['images/陵/129014.gif', 'images/陵/129015.gif'],
+                '雪': ['images/雪/129066.gif'],
+                '鹿': ['images/鹿/129451.gif'],
+                '勝': ['images/勝/127405.gif'],
+                '勞': ['images/勞/123244.gif'],
+                '博': ['images/博/123327.gif'],
+                '善': ['images/善/123647.gif'],
+                '寒': ['images/寒/124183.gif', 'images/寒/124184.gif'],
+                '循': ['images/循/124556.gif'],
+                '悲': ['images/悲/124693.gif'],
+                '惡': ['images/惡/124662.gif'],
+                '揚': ['images/揚/124862.gif'],
+                '斯': ['images/斯/125220.gif'],
+                '智': ['images/智/125326.gif'],
+                '暑': ['images/暑/125333.gif'],
+                '替': ['images/替/125362.gif'],
+                '森': ['images/森/125562.gif'],
+                '測': ['images/測/125890.gif'],
+                '游': ['images/游/125987.gif', 'images/游/125988.gif'],
+                '湛': ['images/湛/125996.gif'],
+                '無': ['images/無/125240.gif', 'images/無/125241.gif'],
+                '焰': ['images/焰/126174.gif'],
+                '然': ['images/然/126176.gif'],
+                '猶': ['images/猶/下載.bmp'],
+                '策': ['images/策/126978.gif', 'images/策/126979.gif', 'images/策/126980.gif'],
+                '菀': ['images/菀/127678.gif', 'images/菀/127679.gif'],
+                '華': ['images/華/123310.gif'],
+                '詎': ['images/詎/128116.gif'],
+                '象': ['images/象/128251.gif'],
+                '超': ['images/超/128350.gif'],
+                '越': ['images/越/128351.gif'],
+                '進': ['images/進/128534.gif'],
+                '開': ['images/開/124471.gif', 'images/開/124472.gif'],
+                '閑': ['images/閑/110321.gif', 'images/閑/110322.gif'],
+                '間': ['images/間/128924.gif', 'images/間/128925.gif'],
+                '陽': ['images/陽/128968.gif', 'images/陽/128969.gif'],
+                '隆': ['images/隆/129021.gif', 'images/隆/129022.gif'],
+                '集': ['images/集/129051.gif'],
+                '雲': ['images/雲/122728.gif', 'images/雲/122729.gif'],
+                '塗': ['images/塗/110300.gif'],
+                '奧': ['images/奧/123954.gif'],
+                '幹': ['images/幹/110278.gif'],
+                '微': ['images/微/124559.gif', 'images/微/124560.gif'],
+                '愚': ['images/愚/124742.gif'],
+                '業': ['images/業/122651.gif'],
+                '極': ['images/極/125426.gif'],
+                '概': ['images/概/124766.gif'],
+                '源': ['images/源/126007.gif'],
+                '滅': ['images/滅/126109.gif', 'images/滅/126110.gif'],
+                '煙': ['images/煙/126151.gif'],
+                '照': ['images/照/126185.gif'],
+                '當': ['images/當/124509.gif', 'images/當/124510.gif'],
+                '萬': ['images/萬/122630.gif'],
+                '經': ['images/經/127161.gif'],
+                '罪': ['images/罪/127260.gif'],
+                '群': ['images/群/127284.gif', 'images/群/127285.gif'],
+                '聖': ['images/聖/123785.gif'],
+                '葉': ['images/葉/123439.gif'],
+                '詢': ['images/詢/128161.gif'],
+                '誠': ['images/誠/128153.gif'],
+                '資': ['images/資/128309.gif'],
+                '跡': ['images/跡/129705.gif'],
+                '載': ['images/載/128481.gif'],
+                '運': ['images/運/128527.gif'],
+                '遐': ['images/遐/128602.gif', 'images/遐/128603.gif'],
+                '道': ['images/道/128606.gif', 'images/道/128607.gif'],
+                '達': ['images/達/128515.gif'],
+                '馳': ['images/馳/129262.gif'],
+                '像': ['images/像/123002.gif'],
+                '圖': ['images/圖/123774.gif', 'images/圖/123775.gif'],
+                '塵': ['images/塵/124220.gif'],
+                '境': ['images/境/123881.gif'],
+                '夢': ['images/夢/125537.gif', 'images/夢/125538.gif'],
+                '對': ['images/對/124200.gif'],
+                '慈': ['images/慈/124756.gif'],
+                '慚': ['images/慚/124723.gif'],
+                '截': ['images/截/124821.gif'],
+                '漢': ['images/漢/125765.gif'],
+                '甄': ['images/甄/126449.gif'],
+                '疑': ['images/疑/126502.gif'],
+                '福': ['images/福/126837.gif'],
+                '稱': ['images/稱/126863.gif'],
+                '端': ['images/端/126938.gif'],
+                '精': ['images/精/129661.gif'],
+                '聞': ['images/聞/128931.gif'],
+                '蒼': ['images/蒼/127573.gif'],
+                '蓋': ['images/蓋/126630.gif', 'images/蓋/126631.gif'],
+                '製': ['images/製/110264.gif'],
+                '輕': ['images/輕/128478.gif', 'images/輕/128479.gif'],
+                '遠': ['images/遠/128535.gif', 'images/遠/128536.gif'],
+                '鄙': ['images/鄙/128679.gif', 'images/鄙/128680.gif'],
+                '際': ['images/際/128983.gif', 'images/際/128984.gif'],
+                '需': ['images/需/127832.gif'],
+                '領': ['images/領/129159.gif'],
+                '儀': ['images/儀/122797.gif'],
+                '墜': ['images/墜/123817.gif', 'images/墜/123818.gif'],
+                '導': ['images/導/124203.gif'],
+                '廣': ['images/廣/124420.gif'],
+                '影': ['images/影/124526.gif'],
+                '德': ['images/德/124563.gif'],
+                '慮': ['images/慮/127828.gif', 'images/慮/127829.gif'],
+                '慶': ['images/慶/124423.gif', 'images/慶/124424.gif', 'images/慶/124425.gif'],
+                '撥': ['images/撥/124946.gif', 'images/撥/124947.gif'],
+                '敷': ['images/敷/125199.gif'],
+                '數': ['images/數/125196.gif'],
+                '標': ['images/標/125479.gif'],
+                '歐': ['images/歐/125650.gif'],
+                '潔': ['images/潔/125856.gif'],
+                '潛': ['images/潛/126062.gif', 'images/潛/126063.gif'],
+                '潤': ['images/潤/125928.gif'],
+                '瑋': ['images/璋/126423.gif'],
+                '窮': ['images/窮/126893.gif'],
+                '篋': ['images/篋/127000.gif', 'images/篋/127001.gif'],
+                '緣': ['images/緣/127218.gif'],
+                '蓮': ['images/蓮/127668.gif'],
+                '瑋': ['images/璋/126423.gif'],
+                '復': ['images/複/123908.gif'],
+                '褒': ['images/褒/128030.gif', 'images/褒/128031.gif'],
+                '論': ['images/論/128122.gif'],
+                '賢': ['images/賢/128276.gif'],
+                '質': ['images/質/128279.gif'],
+                '趣': ['images/趣/128353.gif'],
+                '遷': ['images/遷/128516.gif', 'images/遷/128517.gif'],
+                '鄭': ['images/鄭/125372.gif'],
+                '墨': ['images/墨/123887.gif'],
+                '凝': ['images/凝/123124.gif'],
+                '學': ['images/學/124119.gif'],
+                '憑': ['images/憑/123129.gif'],
+                '憲': ['images/憲/127828.gif', 'images/憲/127829.gif'],
+                '歷': ['images/歷/123362.gif'],
+                '濁': ['images/濁/125888.gif', 'images/濁/125889.gif'],
+                '積': ['images/積/126862.gif'],
+                '穎': ['images/穎/129170.gif', 'images/穎/129171.gif'],
+                '窺': ['images/窺/126919.gif'],
+                '羲': ['images/羲/127287.gif'],
+                '翰': ['images/翰/127310.gif', 'images/翰/127311.gif'],
+                '臻': ['images/臻/127497.gif'],
+                '興': ['images/興/123060.gif'],
+                '舉': ['images/舉/122682.gif'],
+                '遲': ['images/舉/122682.gif', 'images/遲/128540.gif'],
+                '遵': ['images/遵/128619.gif'],
+                '遣': ['images/遺/128608.gif'],
+                '餐': ['images/餐/129205.gif', 'images/餐/129206.gif'],
+                '嶺': ['images/嶺/124286.gif'],
+                '彌': ['images/彌/124495.gif', 'images/彌/124496.gif'],
+                '濕': ['images/濕/126003.gif'],
+                '濟': ['images/濟/125892.gif'],
+                '濤': ['images/濤/125922.gif'],
+                '總': ['images/總/124633.gif', 'images/總/124634.gif'],
+                '翼': ['images/翼/127315.gif'],
+                '謝': ['images/謝/128223.gif', 'images/謝/128224.gif'],
+                '邁': ['images/邁/128523.gif'],
+                '還': ['images/還/128532.gif'],
+                '隱': ['images/隱/129028.gif'],
+                '雖': ['images/雖/127845.gif'],
+                '霜': ['images/霜/129089.gif'],
+                '霞': ['images/霞/129090.gif'],
+                '歸': ['images/歸/124508.gif'],
+                '瞻': ['images/瞻/126718.gif'],
+                '穢': ['images/穢/126865.gif'],
+                '簡': ['images/簡/126990.gif'],
+                '翹': ['images/翹/127301.gif'],
+                '藏': ['images/藏/127811.gif'],
+                '覆': ['images/覆/128052.gif', 'images/覆/128053.gif'],
+                '謬': ['images/謬/128233.gif'],
+                '蹟': ['images/蹟/128329.gif'],
+                '蹤': ['images/蹤/128406.gif'],
+                '雙': ['images/雙/123396.gif'],
+                '顏': ['images/顏/126630.gif'],
+                '懷': ['images/懷/124607.gif'],
+                '識': ['images/識/128133.gif'],
+                '鏡': ['images/鏡/128896.gif'],
+                '難': ['images/難/129044.gif', 'images/難/129045.gif'],
+                '願': ['images/願/110284.gif', 'images/願/124752.gif'],
+                '類': ['images/類/127040.gif'],
+                '麗': ['images/麗/122681.gif'],
+                '礫': ['images/礫/126760.gif'],
+                '艦': ['images/艦/127521.gif'],
+                '譬': ['images/譬/128093.gif'],
+                '譯': ['images/譯/128144.gif', 'images/譯/128145.gif'],
+                '騰': ['images/騰/127468.gif'],
+                '攝': ['images/攝/125103.gif'],
+                '蠢': ['images/蠢/127961.gif', 'images/蠢/127962.gif'],
+                '露': ['images/露/129094.gif'],
+                '驁': ['images/驁/129439.gif'],
+                '顯': ['images/顯/125297.gif'],
+                '鷲': ['images/鷲/129446.gif'],
+                '靈': ['images/靈/126113.gif'],
+                '驟': ['images/驟/129301.gif'],
+                '躡': ['images/躡/128424.gif', 'images/躡/128425.gif'],
+                '讚': ['images/讚/128331.gif'],
+            };
+
+            // --- 渲染卡片結果 ---
+            function renderResults(query) {
+                // 將字串拆分為單字陣列，去重複
+                const chars = [...new Set(query.split(''))];
+
+                statusMessage.classList.add('hidden');
+                cardsGrid.innerHTML = '';
+
+                // 檢查是否「所有的字」都不在資料庫中
+                const hasAnyResult = chars.some(char => imageDatabase[char]);
+
+                if (!hasAnyResult) {
+                    // 顯示全域無結果狀態
+                    const emptyState = document.createElement('div');
+                    emptyState.className = "col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col items-center justify-center py-16 opacity-0";
+                    emptyState.style.animation = `fadeInUp 0.6s ease forwards`;
+                    emptyState.innerHTML = `
+                        <div class="w-16 h-16 border-2 border-seal text-seal flex items-center justify-center rounded-sm text-3xl font-serif mb-6 transform rotate-12 opacity-50">空</div>
+                        <h3 class="text-2xl font-serif text-ink tracking-widest mb-3">無符合條件的結果</h3>
+                        <p class="text-gray-500 tracking-wider font-light">字帖資料庫中尚未收錄您查詢的漢字。</p>
+                    `;
+                    cardsGrid.appendChild(emptyState);
+                    return;
+                }
+
+                let delayIndex = 0; // 用於計算所有卡片的進場動畫延遲
+
+                chars.forEach((char) => {
+                    // 1. 判斷資料庫中是否有該字
+                    if (imageDatabase[char]) {
+                        let imageUrls = [];
+                        // 2. 判斷是陣列(多圖)還是單一字串
+                        if (Array.isArray(imageDatabase[char])) {
+                            imageUrls = imageDatabase[char];
+                        } else {
+                            imageUrls = [imageDatabase[char]];
+                        }
+
+                        // 3. 為這個字的所有寫法(圖片)逐一生成卡片
+                        imageUrls.forEach((imageUrl, variantIndex) => {
+                            // 建立卡片 DOM
+                            const card = document.createElement('div');
+                            card.className = `bg-[#fbfbf9] p-4 pb-5 rounded-sm shadow-sm border border-gray-200 hover:shadow-xl transition-all duration-500 opacity-0 transform translate-y-4`;
+                            card.style.animation = `fadeInUp 0.6s ease forwards ${delayIndex * 0.15}s`;
+
+                            const downloadFileName = imageUrls.length > 1 ? `聖教序_${char}_寫法${variantIndex + 1}.jpg` : `聖教序_${char}.jpg`;
+                            const variantLabel = imageUrls.length > 1 ? `<span class="text-xs text-gray-400 ml-2 font-sans">(寫法 ${variantIndex + 1})</span>` : '';
+
+                            card.innerHTML = `
+                                <!-- 圖片容器 -->
+                                <div class="aspect-[3/4] w-full bg-transparent relative overflow-hidden rounded-sm cursor-zoom-in group flex items-center justify-center" onclick="window.openLightbox(this.querySelector('img').src, '${char}')">
+                                    <!-- 改用獨立的全域錯誤處理函式，確保不會因為作用域問題找不到 function -->
+                                    <img src="${imageUrl}" alt="${char}" 
+                                         onerror="window.handleImageError(this, '${char}')" 
+                                         class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700">
+                                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-colors duration-500">
+                                        <span class="text-white opacity-0 group-hover:opacity-100 font-sans tracking-widest text-sm border border-white px-3 py-1 rounded-full">放大檢視</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- 底部資訊與按鈕 -->
+                                <div class="mt-5 flex justify-between items-end px-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-gray-400 font-sans tracking-wider mb-1">集字聖教序</span>
+                                        <h3 class="font-serif text-3xl text-ink flex items-baseline">${char} ${variantLabel}</h3>
+                                    </div>
+                                    <a href="${imageUrl}" download="${downloadFileName}" class="text-xs text-seal border border-seal px-3 py-1.5 rounded-sm hover:bg-seal hover:text-paper transition-colors flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        下載
+                                    </a>
+                                </div>
+                            `;
+                            cardsGrid.appendChild(card);
+                            delayIndex++;
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- 卡片進場動畫定義 -->
+    <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 </body>
-</html>
 
+</html>
